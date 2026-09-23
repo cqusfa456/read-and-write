@@ -33,6 +33,18 @@ import '../styles/global.css';
   <div id="banner" role="alert" class="alert alert-info mx-auto mt-4 max-w-3xl"></div>
 
   <main class="mx-auto max-w-3xl space-y-6 px-4 py-6">
+    <section id="admin-card" class="card border border-warning bg-base-100 shadow" hidden>
+      <div class="card-body">
+        <h2 class="card-title text-secondary">管理 · 故事 <span class="badge badge-warning badge-sm">admin</span></h2>
+        <input id="admin-title" class="input input-bordered w-full" placeholder="故事标题" />
+        <textarea id="admin-opening" rows="8" class="textarea textarea-bordered w-full" placeholder="开篇正文"></textarea>
+        <div class="card-actions items-center justify-between">
+          <p class="text-xs opacity-60">测试阶段：标题与开篇随时可保存修改；Canon 由每日结算自动产生，不可手改。</p>
+          <button id="admin-save-btn" class="btn btn-secondary">保存</button>
+        </div>
+      </div>
+    </section>
+
     <section class="card bg-base-100 shadow">
       <div class="card-body">
         <h2 class="card-title text-primary">故事正文</h2>

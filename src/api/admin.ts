@@ -31,6 +31,22 @@ export async function createStory(ctx: Ctx, request: Request): Promise<Response>
   return json({ story, segment: seg ? segmentJson(seg) : null }, 201);
 }
 
+/** 测试阶段：管理员可修改标题与开篇（Canon 仍只能由结算产生，plan §39 不提供手改 Canon）。 */
+export async function updateStory(ctx: Ctx, request: Request, params: Record<string, string>): Promise<Response> {
+  const denied = adminOnly(ctx);
+  if (denied) return denied;
+  const body = await readJson(request);
+  if (!body.ok) return body.response;
+  const title = str(body.value.title, 'title', 80);
+  if (!title.ok) return title.response;
+  const opening = str(body.value.opening, 'opening', 4000);
+  if (!opening.ok) return opening.response;
+  const result = await ctx.db.prepare(SQL.updateStory).bind(title.value, opening.value, params.id).run();
+  if (result.meta.changes === 0) return apiError('故事不存在', 404);
+  const story = await ctx.db.prepare(SQL.storyById).bind(params.id).first<StoryRow>();
+  return json({ story });
+}
+
 interface AdminSubmissionRow {
   id: string;
   segment_id: string;

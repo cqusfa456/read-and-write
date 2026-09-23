@@ -19,6 +19,7 @@ type Handler = (ctx: Ctx, request: Request, params: Record<string, string>) => P
 const routes: Array<[string, string, Handler]> = [
   ['GET', '/api/stories', (ctx) => story.listStories(ctx)],
   ['POST', '/api/admin/stories', admin.createStory],
+  ['PATCH', '/api/admin/stories/:id', (ctx, req, p) => admin.updateStory(ctx, req, p)],
   ['GET', '/api/stories/:id', (ctx, _req, p) => story.getStory(ctx, p)],
   ['GET', '/api/stories/:id/current', (ctx, _req, p) => story.getCurrent(ctx, p)],
   ['GET', '/api/stories/:id/history', (ctx, _req, p) => story.getHistory(ctx, p)],

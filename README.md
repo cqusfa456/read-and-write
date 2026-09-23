@@ -76,7 +76,7 @@ CI（Cloudflare Workers Builds）：把 Settings > Build 的 Deploy command 设�
 | `ADMIN_USERNAMES` | `['admin']` | 管理员名单；MVP 以用户名配置 |
 | `SESSION_TTL_MS` | 30 天 | Session Cookie 有效期 |
 
-前端按默认规则渲染（自己的投稿不显示投票按钮等），服务器才是最终权威。
+前端管理卡片（admin 可见）：创建/修改标题与开篇，开篇预填默认草稿（测试阶段随时可改）；Canon 仍只能由每日结算产生。前端按默认规则渲染（自己的投稿不显示投票按钮等），服务器才是最终权威。
 
 ## API
 
@@ -92,6 +92,7 @@ CI（Cloudflare Workers Builds）：把 Settings > Build 的 Deploy command 设�
 | POST | `/api/auth/register` / `login` / `logout` | 注册 / 登录 / 退出 |
 | GET | `/api/auth/me` | 当前用户 |
 | POST | `/api/admin/stories` | 创建故事 `{title, opening}` + Day 1 |
+| PATCH | `/api/admin/stories/:id` | 修改标题/开篇（测试阶段可改；Canon 不可手改） |
 | GET | `/api/admin/submissions?segment_id=` | 全部投稿（含 removed，审计用） |
 | POST | `/api/admin/submissions/:id/remove` | 违规下架（status=removed，不物理删除） |
 | GET | `/api/admin/users` | 用户列表 |

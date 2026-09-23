@@ -60,6 +60,7 @@ export const SQL = {
   // stories
   insertStory: `INSERT INTO stories (id, title, opening, created_at, status) VALUES (?, ?, ?, ?, 'active')`,
   storyById: `SELECT * FROM stories WHERE id = ?`,
+  updateStory: `UPDATE stories SET title = ?, opening = ? WHERE id = ?`,
   listStories: `SELECT * FROM stories WHERE status = 'active' ORDER BY created_at ASC`,
 
   // segments

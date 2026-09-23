@@ -2,6 +2,11 @@
 // 安全（plan §30）：用户内容一律 textContent 渲染，绝不使用 innerHTML。
 const $ = (id: string) => document.getElementById(id) as HTMLElement;
 
+// 管理员创建故事时的开篇草稿（测试阶段预填，管理员可在页面上修改）
+const DEFAULT_OPENING = `黄色的灯光，打在泛黄的书页上，少女坐在沙发上，慢慢地看着手中的书。不知过了多久，少女右手托着的书页慢慢变少，最后只剩下书的精装封皮。合上书，少女站了起来，走在厚厚的地毯上，像幽灵一样在这大图书馆里游走。
+对于铅字中毒者来说，只有翻开书页才能平静心中的那一团火焰，只有沉浸在书香才能少许安神。少女在图书馆中不断地游走，寻找中意的图书，即使每一次翻开书本，现实都会上演同样的闹剧。
+对吧，只是在读书而已，不过是每个故事背后，都在现实中有所投射吧了。`;
+
 interface Me { id: string; username: string; is_admin: boolean }
 interface Segment { id: string; day: number; closes_at: string; status: string }
 interface Sub {
@@ -10,7 +15,7 @@ interface Sub {
 }
 interface Canon { day: number; content: string | null; vote_count: number | null; author: string | null }
 
-const state: { me: Me | null; story: { title: string; opening: string } | null; segment: Segment | null; subs: Sub[]; canons: Canon[] } = {
+const state: { me: Me | null; story: { id: string; title: string; opening: string } | null; segment: Segment | null; subs: Sub[]; canons: Canon[] } = {
   me: null, story: null, segment: null, subs: [], canons: [],
 };
 
@@ -36,6 +41,33 @@ function renderAuth() {
   ($('login-form') as HTMLFormElement).hidden = logged;
   $('user-box').hidden = !logged;
   if (logged) $('user-name').textContent = state.me!.username + (state.me!.is_admin ? '（管理员）' : '');
+  $('admin-card').hidden = !state.me?.is_admin;
+  if (state.me?.is_admin) {
+    const title = $('admin-title') as HTMLInputElement;
+    const opening = $('admin-opening') as HTMLTextAreaElement;
+    if (!title.value && !opening.value) {
+      title.value = state.story?.title && state.story.title !== '每日接龙' ? state.story.title : '';
+      opening.value = state.story?.opening || DEFAULT_OPENING;
+    }
+  }
+}
+
+async function adminSave() {
+  try {
+    const payload = JSON.stringify({
+      title: ($('admin-title') as HTMLInputElement).value.trim(),
+      opening: ($('admin-opening') as HTMLTextAreaElement).value,
+    });
+    if (state.story) {
+      await api(`/api/admin/stories/${state.story.id}`, { method: 'PATCH', body: payload });
+    } else {
+      await api('/api/admin/stories', { method: 'POST', body: payload });
+    }
+    banner('');
+    await loadAll();
+  } catch (err) {
+    banner((err as Error).message);
+  }
 }
 
 function renderStory() {
@@ -252,6 +284,7 @@ $('logout-btn').addEventListener('click', async () => {
 
 $('submit-btn').addEventListener('click', submitDraft);
 $('content').addEventListener('input', tickCounter);
+$('admin-save-btn').addEventListener('click', adminSave);
 
 setInterval(tickCountdown, 1000);
 setInterval(loadAll, 30000); // 轻量轮询：30 秒刷新回合与投稿
