@@ -11,8 +11,7 @@
     {
       "binding": "DB",
       "database_name": "read-and-write",
-      // 部署前替换为 `wrangler d1 create read-and-write` 输出的 database_id
-      "database_id": "REPLACE_WITH_YOUR_D1_ID",
+      "database_id": "2488ffd3-0919-472f-8f2c-05f83ba8f032",
       "migrations_dir": "migrations"
     }
   ]
