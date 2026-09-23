@@ -1,0 +1,17 @@
+{
+  "name": "read-and-write",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.ts",
+    "db:local": "wrangler d1 migrations apply read-and-write --local",
+    "db:remote": "wrangler d1 migrations apply read-and-write --remote"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "wrangler": "^4.0.0"
+  }
+}
