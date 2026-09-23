@@ -1,9 +1,11 @@
 import { CONFIG } from '../config.ts';
 
 // 认证（plan §27）：密码哈希用 WebCrypto PBKDF2-SHA256（Cloudflare 环境可靠方案；
-// 换 Argon2id 只需替换 hashPassword/verifyPassword）。
+// 换 Argon2id 只需替换 hashPassword/verifyPassword）。迭代数受 workerd 上限约束，见下。
 // Session 用 HMAC 签名 Cookie（HttpOnly + Secure + SameSite=Lax），服务端无状态。
-const ITERATIONS = 250_000;
+// 100000 是 workerd WebCrypto 的 PBKDF2 硬上限（生产实测：deriveBits 超过即抛
+// "iteration counts above 100000 are not supported"）；本地 node 测试无此限制。
+const ITERATIONS = 100_000;
 const enc = new TextEncoder();
 
 function toHex(bytes: Uint8Array): string {

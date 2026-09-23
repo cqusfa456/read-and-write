@@ -97,8 +97,8 @@ CI（Cloudflare Workers Builds）：把 Settings > Build 的 Deploy command 设�
 - 身份只来自 Session Cookie（HMAC 签名，HttpOnly + Secure + SameSite=Lax）；
   请求体里的 `user_id` / `vote_count` / `status` 等一律忽略
 - 写操作校验 Origin（CSRF），请求体上限 8KB（plan §31）
-- 密码：PBKDF2-SHA256（25 万次迭代 + 随机盐 + 常量时间比较）；
-  Cloudflare 环境可靠方案（plan §27 允许），换 Argon2id 只需替换 `services/auth.ts` 两个函数
+- 密码：PBKDF2-SHA256（10 万次迭代 + 随机盐 + 常量时间比较；10 万是 workerd
+  WebCrypto 的硬上限，生产实测超过会抛错）；换 Argon2id 只需替换 `services/auth.ts` 两个函数
 - 投稿渲染用 `textContent`，无 innerHTML（XSS，plan §30）
 - 重复投票由 `UNIQUE(segment_id, user_id)` 最终兜底（plan §22）
 - 限流：进程内滑动窗口（每个隔离实例各自计数），并发量大了换 Cloudflare Rate Limiting，

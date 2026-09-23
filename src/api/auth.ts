@@ -26,13 +26,19 @@ export async function register(ctx: Ctx, request: Request): Promise<Response> {
   if (!USERNAME_RE.test(username.value)) return apiError('用户名需为 2–24 位字母/数字/下划线/连字符');
   if (password.value.length < 8) return apiError('密码至少 8 位');
   const id = crypto.randomUUID();
+  let hash: string;
   try {
-    await ctx.db
-      .prepare(SQL.insertUser)
-      .bind(id, username.value, await hashPassword(password.value), isoAt(ctx.nowMs))
-      .run();
-  } catch {
-    return apiError('用户名已被占用', 409);
+    hash = await hashPassword(password.value);
+  } catch (err) {
+    console.error('register hash failed:', err);
+    return apiError('注册失败', 500);
+  }
+  try {
+    await ctx.db.prepare(SQL.insertUser).bind(id, username.value, hash, isoAt(ctx.nowMs)).run();
+  } catch (err) {
+    if (String((err as Error)?.message ?? err).includes('UNIQUE')) return apiError('用户名已被占用', 409);
+    console.error('register insert failed:', err);
+    return apiError('注册失败', 500);
   }
   const token = await makeSession(id, ctx.secret, ctx.nowMs);
   return jsonWithCookie(userJson(ctx, id, username.value), sessionCookie(token), 201);
