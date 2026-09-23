@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler d1 migrations apply read-and-write --remote && wrangler deploy",
+    "build:web": "cd frontend && npm install --no-audit --no-fund && npm run build",
+    "deploy": "npm run build:web && wrangler d1 migrations apply read-and-write --remote && wrangler deploy",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.ts",
     "db:local": "wrangler d1 migrations apply read-and-write --local",

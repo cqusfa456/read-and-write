@@ -8,11 +8,11 @@ Cloudflare Workers + D1 的社区接龙小说 MVP：每天（UTC+8 00:00–24:00
 ## 架构
 
 ```text
-静态前端 (public/) ── Cloudflare Worker (src/) ── D1 (migrations/)
-                     │
-                     ├─ Lazy Finalization：请求到来时发现回合过期就地结算（不依赖 Cron）
-                     ├─ 所有状态 / 权限 / 时间 / 字符数由服务器判定
-                     └─ Session Cookie + DB 约束兜底
+静态前端 (frontend/) ── Cloudflare Worker (src/) ── D1 (migrations/)
+（Astro 构建产物        │
+ frontend/dist）       ├─ Lazy Finalization：请求到来时发现回合过期就地结算（不依赖 Cron）
+                       ├─ 所有状态 / 权限 / 时间 / 字符数由服务器判定
+                       └─ Session Cookie + DB 约束兜底
 ```
 
 - 状态机：`open → finalizing → finalized`（不是 SUBMISSION/VOTING 两段式）
@@ -31,7 +31,7 @@ src/services/         业务层（auth/finalization/submission/voting）
 src/db/queries.ts     SQL 与行类型
 src/utils/            time（UTC+8 窗口）/ text（字符计数）/ validation（请求体与响应）
 migrations/           D1 结构（IF NOT EXISTS，可重复部署）
-public/               前端（HTML + CSS + Vanilla JS）
+frontend/             前端：Astro + Tailwind v4 + DaisyUI v5（构建产物 dist/ 由 assets 伺服）
 tests/                node --test + node:sqlite 跑真实 SQL
 ```
 
@@ -45,12 +45,18 @@ npm run typecheck
 # 本地开发
 npx wrangler d1 create read-and-write      # 把输出的 database_id 填进 wrangler.jsonc
 npm run db:local                           # 应用 migration（本地 SQLite）
+npm run build:web                          # 构建前端（frontend/ → frontend/dist）
 npx wrangler dev                           # http://127.0.0.1:8787
+# 前端单独热更：cd frontend && npm run dev
 
 # 部署
 npx wrangler secret put SESSION_SECRET     # 生产必须设置
-npm run deploy                             # = 远程应用 migration + wrangler deploy
+npm run deploy                             # = 构建前端 + 远程 migration + wrangler deploy
 ```
+
+前端（Astro + Tailwind v4 + DaisyUI v5）在 `frontend/`，纯静态 SSG + 原生 TS 交互脚本，
+产物 `frontend/dist/` **入库**——这样即使 CI 的 Deploy command 还是 `npx wrangler deploy`
+也能发布最新前端；若 CI 配置了 Build command `npm run build:web` 则每次构建自动重出产物。
 
 CI（Cloudflare Workers Builds）：把 Settings > Build 的 Deploy command 设为 `npm run deploy`，
 每次构建即自动应用 migration（幂等可重复执行）。注意构建用的 API token 需要有 D1 编辑权限；
