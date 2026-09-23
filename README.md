@@ -49,9 +49,12 @@ npx wrangler dev                           # http://127.0.0.1:8787
 
 # 部署
 npx wrangler secret put SESSION_SECRET     # 生产必须设置
-npm run db:remote
-npm run deploy
+npm run deploy                             # = 远程应用 migration + wrangler deploy
 ```
+
+CI（Cloudflare Workers Builds）：把 Settings > Build 的 Deploy command 设为 `npm run deploy`，
+每次构建即自动应用 migration（幂等可重复执行）。注意构建用的 API token 需要有 D1 编辑权限；
+若构建在 migration 步骤报权限错误，在 Settings > Build 的 API token 处换用自建的、带 D1 Edit 的 token。
 
 首次启用：注册用户名 `admin` 的账号（见「可配置规则」的管理员名单），
 调用 `POST /api/admin/stories` 创建故事（标题 + Opening），Day 1 即自动开启。
