@@ -104,6 +104,7 @@ CI（Cloudflare Workers Builds）：把 Settings > Build 的 Deploy command 设�
 | POST | `/api/admin/reset` | 一键清除活动数据（投稿/投票/回合并重建 Day 1，用户保留） |
 | POST | `/api/admin/segments/:id/finalize` | 手动结算异常回合（走同一结算路径，不提供随意改 Canon 的接口） |
 | POST | `/api/admin/segments/:id/finalize` | 手动结算异常回合（走同一结算路径，不提供随意改 Canon 的接口） |
+| POST | `/api/admin/segments/:id/finalize` | 手动结算异常回合（走同一结算路径，不提供随意改 Canon 的接口） |
 
 ## 安全边界（plan §51–§52）
 
