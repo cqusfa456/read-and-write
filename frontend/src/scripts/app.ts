@@ -195,6 +195,20 @@ function renderSubs() {
       btn.addEventListener('click', () => (sub.voted ? unvote(sub.id) : vote(sub.id)));
       foot.appendChild(btn);
     }
+    if (state.me?.is_admin) {
+      const del = document.createElement('button');
+      del.className = 'btn btn-outline btn-error btn-sm';
+      del.textContent = '删除';
+      del.addEventListener('click', async () => {
+        try {
+          await api(`/api/admin/submissions/${sub.id}/remove`, { method: 'POST', body: '{}' });
+          await loadAll();
+        } catch (err) {
+          banner((err as Error).message);
+        }
+      });
+      foot.appendChild(del);
+    }
     li.appendChild(head);
     li.appendChild(content);
     li.appendChild(foot);

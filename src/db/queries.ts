@@ -65,6 +65,10 @@ export const SQL = {
     `INSERT INTO stories (id, title, opening, created_at, status, start_date, end_date) VALUES (?, ?, ?, ?, 'active', ?, ?)`,
   storyById: `SELECT * FROM stories WHERE id = ?`,
   updateStory: `UPDATE stories SET title = ?, opening = ?, start_date = ?, end_date = ? WHERE id = ?`,
+  countStorySubmissions:
+    `SELECT COUNT(*) AS n FROM submissions s JOIN segments g ON s.segment_id = g.id WHERE g.story_id = ?`,
+  segmentsOfStory: `SELECT id FROM segments WHERE story_id = ? ORDER BY day DESC`,
+  deleteSegmentById: `DELETE FROM segments WHERE id = ?`,
   listStories: `SELECT * FROM stories WHERE status = 'active' ORDER BY created_at ASC`,
 
   // segments

@@ -1,5 +1,6 @@
 import { SQL, type SegmentRow, type StoryRow, type UserRow } from '../db/queries.ts';
 import { finalizeSegment } from '../services/finalization.ts';
+import { updateStoryFields } from '../services/story.ts';
 import { isoAt, firstWindowOf, windowFor } from '../utils/time.ts';
 import { apiError, json, readJson, str } from '../utils/validation.ts';
 import { isAdmin, segmentJson, submissionJson, type Ctx } from './common.ts';
@@ -50,7 +51,7 @@ export async function createStory(ctx: Ctx, request: Request): Promise<Response>
   return json({ story, segment: seg ? segmentJson(seg) : null }, 201);
 }
 
-/** 测试阶段：管理员可修改标题/开篇/排期（Canon 仍只能由结算产生，plan §39 不提供手改 Canon）。 */
+/** 测试阶段：管理员可修改标题/开篇/排期；开始日期变更会重建 Day 1（Day 编号由开始日期决定）。 */
 export async function updateStory(ctx: Ctx, request: Request, params: Record<string, string>): Promise<Response> {
   const denied = adminOnly(ctx);
   if (denied) return denied;
@@ -65,13 +66,14 @@ export async function updateStory(ctx: Ctx, request: Request, params: Record<str
   const end = schedule(body.value.end_date, 'end_date');
   if (!end.ok) return end.response;
   if (start.value && end.value && end.value < start.value) return apiError('截止日不能早于开始日');
-  const result = await ctx.db
-    .prepare(SQL.updateStory)
-    .bind(title.value, opening.value, start.value, end.value, params.id)
-    .run();
-  if (result.meta.changes === 0) return apiError('故事不存在', 404);
-  const story = await ctx.db.prepare(SQL.storyById).bind(params.id).first<StoryRow>();
-  return json({ story });
+  const result = await updateStoryFields(
+    ctx.db,
+    params.id,
+    { title: title.value, opening: opening.value, start: start.value, end: end.value },
+    ctx.nowMs,
+  );
+  if (!result.ok) return apiError(result.error, result.status);
+  return json({ story: result.story });
 }
 
 interface AdminSubmissionRow {
