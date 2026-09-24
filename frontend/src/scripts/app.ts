@@ -92,6 +92,21 @@ const displayDay = (): number | null => {
   return Math.floor((now - startMs) / DAY_MS) + 1;
 };
 
+/** Day 由开稿日期计算：开稿前 = Day 0；开稿日起逐日 +1；截止后冻结在截止那天。 */
+const displayDay = (): number | null => {
+  const s = state.story;
+  const fallback = state.segment?.day ?? null;
+  if (!s?.start_date) return fallback; // 无排期：沿用段号
+  const startMs = Date.parse(s.start_date + 'T00:00:00+08:00');
+  const now = Date.now();
+  if (now < startMs) return 0;
+  if (s.end_date) {
+    const endOpenMs = Date.parse(s.end_date + 'T00:00:00+08:00');
+    if (now >= endOpenMs + DAY_MS) return Math.round((endOpenMs - startMs) / DAY_MS) + 1;
+  }
+  return Math.floor((now - startMs) / DAY_MS) + 1;
+};
+
 // ---------- 渲染 ----------
 
 function renderAuth() {
