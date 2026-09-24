@@ -1,0 +1,27 @@
+import { c as createComponent, r as renderHead, a as renderScript, b as renderTemplate, d as createAstro } from '../chunks/astro/server_CepopKVG.mjs';
+import 'piccolore';
+import 'html-escaper';
+import 'clsx';
+/* empty css                                 */
+export { renderers } from '../renderers.mjs';
+
+const $$Astro = createAstro();
+const $$Index = createComponent(($$result, $$props, $$slots) => {
+  const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
+  Astro2.self = $$Index;
+  return renderTemplate`<html lang="zh-CN" data-theme="autumn"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>每日接龙 · 社区共创小说</title><link rel="icon" type="image/svg+xml" href="/favicon.svg">${renderHead()}</head> <body class="min-h-screen bg-base-200"> <header class="navbar bg-base-100 px-4 shadow"> <div class="flex-1 items-baseline gap-3"> <h1 id="story-title" class="text-xl font-bold tracking-widest">每日接龙</h1> <p class="hidden text-sm opacity-60 lg:block">每天一个回合，社区共同决定故事的下一步</p> </div> <div class="flex-none"> <form id="login-form" class="join"> <input id="username" class="input input-bordered input-sm join-item w-28" placeholder="用户名" autocomplete="username" required> <input id="password" type="password" class="input input-bordered input-sm join-item w-28" placeholder="密码" autocomplete="current-password" required> <button type="submit" id="login-btn" class="btn btn-primary btn-sm join-item">登录</button> <button type="button" id="register-btn" class="btn btn-outline btn-primary btn-sm join-item">注册</button> </form> <div id="user-box" class="flex items-center gap-2" hidden> <span id="user-name" class="text-sm font-medium"></span> <button type="button" id="logout-btn" class="btn btn-ghost btn-sm">退出</button> </div> </div> </header> <div id="banner" role="alert" class="alert alert-info mx-auto mt-4 max-w-3xl"></div> <main class="mx-auto max-w-3xl space-y-6 px-4 py-6"> <section id="admin-card" class="card border border-warning bg-base-100 shadow" hidden> <div class="card-body"> <h2 class="card-title text-secondary">管理 · 故事 <span class="badge badge-warning badge-sm">admin</span></h2> <input id="admin-title" class="input input-bordered w-full" placeholder="故事标题"> <textarea id="admin-opening" rows="8" class="textarea textarea-bordered w-full" placeholder="开篇正文"></textarea> <div class="flex flex-wrap items-center gap-3"> <label class="label"><span class="label-text">开始日期（UTC+8）</span></label> <input id="admin-start" type="date" class="input input-bordered input-sm"> <label class="label"><span class="label-text">截止日期</span></label> <input id="admin-end" type="date" class="input input-bordered input-sm"> <span class="text-xs opacity-60">留空 = 无排期（长期开放）；截止日 24:00 后不再开新回合</span> </div> <div class="card-actions items-center justify-between"> <p class="text-xs opacity-60">测试阶段：标题与开篇随时可保存修改；Canon 由每日结算自动产生，不可手改。</p> <button id="admin-save-btn" class="btn btn-secondary">保存</button> </div> <div class="divider my-0"></div> <div class="card-actions items-center justify-between"> <p class="text-xs opacity-60">换活动复用：清空全部投稿/投票/回合并按排期重建 Day 1（用户账号保留），不可撤销。</p> <button id="admin-reset-btn" class="btn btn-outline btn-error btn-sm">一键清除活动数据</button> </div> </div> </section> <section class="card bg-base-100 shadow"> <div class="card-body"> <h2 class="card-title text-primary">故事正文</h2> <article id="story-text"></article> </div> </section> <section class="card bg-base-100 shadow"> <div class="card-body"> <div class="flex flex-wrap items-center justify-between gap-2"> <h2 class="card-title text-primary">今日续写 <span id="day-label" class="badge badge-primary">Day ?</span></h2> <div class="text-right"> <div id="countdown" class="font-mono text-lg">距离本回合结束：--:--:--</div> <div id="status-line" class="text-sm opacity-70"></div> </div> </div> <p id="schedule-line" class="text-xs opacity-60"></p> <div id="compose"> <textarea id="content" rows="5" class="textarea textarea-bordered w-full" placeholder="写下这一段续写（80–300 字）"></textarea> <div class="mt-2 flex items-center justify-between"> <span id="char-count" class="text-sm opacity-60">0 / 300</span> <button id="submit-btn" class="btn btn-primary">提交续写</button> </div> </div> <p id="closed-note" class="alert alert-warning" hidden>本回合已结束，正在结算最终结果……</p> </div> </section> <section class="card bg-base-100 shadow"> <div class="card-body"> <h2 class="card-title text-primary">今日投稿</h2> <p id="empty-note" class="text-sm opacity-60" hidden>今天还没有投稿，来写下第一段吧。</p> <ul id="sub-list" class="space-y-3"></ul> </div> </section> </main> <footer class="footer footer-center bg-base-100 py-4 text-sm opacity-60"> <p>投票最高的投稿将在 24:00 成为 Canon，故事由此继续。</p> </footer> ${renderScript($$result, "D:/cqusfa/read-and-write/frontend/src/pages/index.astro?astro&type=script&index=0&lang.ts")} </body> </html>`;
+}, "D:/cqusfa/read-and-write/frontend/src/pages/index.astro", void 0);
+
+const $$file = "D:/cqusfa/read-and-write/frontend/src/pages/index.astro";
+const $$url = "";
+
+const _page = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: $$Index,
+  file: $$file,
+  url: $$url
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const page = () => _page;
+
+export { page };
