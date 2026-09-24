@@ -68,7 +68,10 @@ export const SQL = {
   countStorySubmissions:
     `SELECT COUNT(*) AS n FROM submissions s JOIN segments g ON s.segment_id = g.id WHERE g.story_id = ?`,
   segmentsOfStory: `SELECT id FROM segments WHERE story_id = ? ORDER BY day DESC`,
+  allSegmentsDesc: `SELECT id FROM segments ORDER BY day DESC`,
   deleteSegmentById: `DELETE FROM segments WHERE id = ?`,
+  deleteAllVotes: `DELETE FROM votes`,
+  deleteAllSubmissions: `DELETE FROM submissions`,
   listStories: `SELECT * FROM stories WHERE status = 'active' ORDER BY created_at ASC`,
 
   // segments

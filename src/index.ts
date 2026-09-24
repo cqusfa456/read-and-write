@@ -35,6 +35,7 @@ const routes: Array<[string, string, Handler]> = [
   ['GET', '/api/admin/submissions', (ctx, req) => admin.listSubmissions(ctx, req)],
   ['POST', '/api/admin/submissions/:id/remove', (ctx, _req, p) => admin.removeSubmission(ctx, p)],
   ['GET', '/api/admin/users', (ctx) => admin.listUsers(ctx)],
+  ['POST', '/api/admin/reset', (ctx) => admin.reset(ctx)],
   ['POST', '/api/admin/segments/:id/finalize', (ctx, _req, p) => admin.finalizeNow(ctx, p)],
 ];
 

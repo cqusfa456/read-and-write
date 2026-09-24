@@ -1,6 +1,6 @@
 import { SQL, type SegmentRow, type StoryRow, type UserRow } from '../db/queries.ts';
 import { finalizeSegment } from '../services/finalization.ts';
-import { updateStoryFields } from '../services/story.ts';
+import { updateStoryFields, resetActivity as resetActivityService } from '../services/story.ts';
 import { isoAt, firstWindowOf, windowFor } from '../utils/time.ts';
 import { apiError, json, readJson, str } from '../utils/validation.ts';
 import { isAdmin, segmentJson, submissionJson, type Ctx } from './common.ts';
@@ -74,6 +74,15 @@ export async function updateStory(ctx: Ctx, request: Request, params: Record<str
   );
   if (!result.ok) return apiError(result.error, result.status);
   return json({ story: result.story });
+}
+
+/** 一键清除活动数据（不同活动复用）：清空全部投稿/投票/回合并重建 Day 1，用户保留。 */
+export async function reset(ctx: Ctx): Promise<Response> {
+  const denied = adminOnly(ctx);
+  if (denied) return denied;
+  const result = await resetActivityService(ctx.db, ctx.nowMs);
+  if (!result.ok) return apiError(result.error, result.status);
+  return json({ ok: true, stories: result.stories });
 }
 
 interface AdminSubmissionRow {

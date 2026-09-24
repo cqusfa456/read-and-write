@@ -37,4 +37,24 @@ export async function updateStoryFields(
   return { ok: true, story: fresh! };
 }
 
+/**
+ * 一键清除活动数据（不同活动复用站点）：清空全部投票/投稿/回合并按各自排期重建 Day 1。
+ * 用户账号保留；故事的标题/开篇/排期保留，供下一场活动修改后使用。
+ */
+export async function resetActivity(db: DB, nowMs: number): Promise<ServiceResult<{ stories: number }>> {
+  await db.prepare(SQL.deleteAllVotes).bind().run();
+  await db.prepare(SQL.deleteAllSubmissions).bind().run();
+  const olds = await db.prepare(SQL.allSegmentsDesc).bind().all<{ id: string }>();
+  for (const row of olds.results) await db.prepare(SQL.deleteSegmentById).bind(row.id).run();
+  const stories = await db.prepare(SQL.listStories).bind().all<StoryRow>();
+  for (const s of stories.results) {
+    const win = s.start_date ? firstWindowOf(s.start_date) : windowFor(nowMs);
+    await db
+      .prepare(SQL.insertSegment)
+      .bind(crypto.randomUUID(), s.id, 1, null, win.openedAt, win.closesAt, isoAt(nowMs))
+      .run();
+  }
+  return { ok: true, stories: stories.results.length };
+}
+
 export type { SegmentRow };

@@ -361,6 +361,26 @@ $('logout-btn').addEventListener('click', async () => {
 $('submit-btn').addEventListener('click', submitDraft);
 $('content').addEventListener('input', tickCounter);
 $('admin-save-btn').addEventListener('click', adminSave);
+$('admin-reset-btn').addEventListener('click', async () => {
+  if (!confirm('确定一键清除全部活动数据？\n\n所有投稿、投票、回合记录将被清空，回合并按排期重建 Day 1；用户账号保留。\n此操作不可撤销。')) return;
+  try {
+    await api('/api/admin/reset', { method: 'POST', body: '{}' });
+    banner('活动数据已清空，可以开启下一场活动。');
+    await loadAll();
+  } catch (err) {
+    banner((err as Error).message);
+  }
+});
+$('admin-reset-btn').addEventListener('click', async () => {
+  if (!confirm('确定一键清除活动数据？\n\n将清空全部投稿、投票、回合并按排期重建 Day 1；用户账号保留。\n此操作不可撤销。')) return;
+  try {
+    await api('/api/admin/reset', { method: 'POST', body: '{}' });
+    banner('活动数据已清空，可以开始下一场活动。');
+    await loadAll();
+  } catch (err) {
+    banner((err as Error).message);
+  }
+});
 
 setInterval(tickCountdown, 1000);
 setInterval(loadAll, 30000); // 轻量轮询：30 秒刷新回合与投稿
