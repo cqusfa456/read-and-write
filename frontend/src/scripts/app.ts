@@ -8,16 +8,18 @@ const DEFAULT_OPENING = `黄色的灯光，打在泛黄的书页上，少女坐�
 对吧，只是在读书而已，不过是每个故事背后，都在现实中有所投射吧了。`;
 
 interface Me { id: string; username: string; is_admin: boolean }
-interface Segment { id: string; day: number; closes_at: string; status: string }
+interface Segment { id: string; day: number; opened_at: string; closes_at: string; status: string }
 interface Sub {
   id: string; content: string; character_count: number; vote_count: number;
   author: { id: string; username: string }; created_at: string; voted: boolean; is_mine: boolean;
 }
 interface Canon { day: number; content: string | null; vote_count: number | null; author: string | null }
 
-const state: { me: Me | null; story: { id: string; title: string; opening: string } | null; segment: Segment | null; subs: Sub[]; canons: Canon[] } = {
-  me: null, story: null, segment: null, subs: [], canons: [],
-};
+const state: {
+  me: Me | null;
+  story: { id: string; title: string; opening: string; start_date: string | null; end_date: string | null } | null;
+  segment: Segment | null; subs: Sub[]; canons: Canon[];
+} = { me: null, story: null, segment: null, subs: [], canons: [] };
 
 async function api(path: string, options: RequestInit = {}): Promise<any> {
   const res = await fetch(path, { headers: { 'content-type': 'application/json' }, credentials: 'same-origin', ...options });
@@ -34,6 +36,17 @@ function banner(message: string) {
 
 const countChars = (text: string) => Array.from(text).length;
 
+// 排期（UTC+8 业务日）；无排期 = 长期开放
+const DAY_MS = 86_400_000;
+const phaseOf = (): 'before' | 'running' | 'ended' => {
+  const s = state.story;
+  if (!s) return 'running';
+  const now = Date.now();
+  if (s.start_date && now < Date.parse(s.start_date + 'T00:00:00+08:00')) return 'before';
+  if (s.end_date && now >= Date.parse(s.end_date + 'T00:00:00+08:00') + DAY_MS) return 'ended';
+  return 'running';
+};
+
 // ---------- 渲染 ----------
 
 function renderAuth() {
@@ -45,9 +58,13 @@ function renderAuth() {
   if (state.me?.is_admin) {
     const title = $('admin-title') as HTMLInputElement;
     const opening = $('admin-opening') as HTMLTextAreaElement;
-    if (!title.value && !opening.value) {
+    const start = $('admin-start') as HTMLInputElement;
+    const end = $('admin-end') as HTMLInputElement;
+    if (!title.value && !opening.value && !start.value && !end.value) {
       title.value = state.story?.title && state.story.title !== '每日接龙' ? state.story.title : '';
       opening.value = state.story?.opening || DEFAULT_OPENING;
+      start.value = state.story?.start_date ?? '';
+      end.value = state.story?.end_date ?? '';
     }
   }
 }
@@ -57,6 +74,8 @@ async function adminSave() {
     const payload = JSON.stringify({
       title: ($('admin-title') as HTMLInputElement).value.trim(),
       opening: ($('admin-opening') as HTMLTextAreaElement).value,
+      start_date: ($('admin-start') as HTMLInputElement).value,
+      end_date: ($('admin-end') as HTMLInputElement).value,
     });
     if (state.story) {
       await api(`/api/admin/stories/${state.story.id}`, { method: 'PATCH', body: payload });
@@ -96,7 +115,13 @@ function renderStory() {
 }
 
 function roundOpen() {
-  return Boolean(state.segment && state.segment.status === 'open' && Date.now() < Date.parse(state.segment.closes_at));
+  return Boolean(
+    phaseOf() === 'running' &&
+      state.segment &&
+      state.segment.status === 'open' &&
+      Date.now() >= Date.parse(state.segment.opened_at) &&
+      Date.now() < Date.parse(state.segment.closes_at),
+  );
 }
 
 function renderRound() {
@@ -105,17 +130,31 @@ function renderRound() {
   $('day-label').textContent = seg ? `Day ${seg.day}` : 'Day ?';
   $('status-line').textContent = '';
   if (seg) {
-    const mk = (ok: boolean, label: string) => {
+    const mk = (label: string) => {
       const b = document.createElement('span');
-      b.className = 'badge badge-sm ml-1 ' + (ok ? 'badge-success' : 'badge-ghost');
+      b.className = 'badge badge-sm ml-1 ' + (open ? 'badge-success' : 'badge-ghost');
       b.textContent = `${label} ${open ? '✓' : '✕'}`;
       $('status-line').appendChild(b);
     };
-    mk(open, '投稿');
-    mk(open, '投票');
+    mk('投稿');
+    mk('投票');
   }
+  const s = state.story;
+  $('schedule-line').textContent =
+    s?.start_date || s?.end_date
+      ? `排期：${s?.start_date ?? '即刻'} 00:00 → ${s?.end_date ?? '不限'} 24:00（UTC+8）`
+      : '';
   $('compose').hidden = !open;
-  $('closed-note').hidden = open || !seg;
+  const note = $('closed-note');
+  note.hidden = open || !seg || phaseOf() === 'running';
+  if (!note.hidden) {
+    note.textContent =
+      phaseOf() === 'before'
+        ? `本故事将于 ${state.story!.start_date} 00:00（UTC+8）开稿。`
+        : phaseOf() === 'ended'
+          ? '本故事已完结，感谢参与这场共写。'
+          : '本回合已结束，正在结算最终结果……';
+  }
   const btn = $('submit-btn') as HTMLButtonElement;
   btn.disabled = !state.me;
   btn.textContent = state.me ? '提交续写' : '登录后可投稿';
@@ -150,10 +189,10 @@ function renderSubs() {
     foot.appendChild(votes);
     if (state.me && !sub.is_mine) {
       const btn = document.createElement('button');
-      btn.className = 'btn btn-primary btn-sm';
-      btn.textContent = sub.voted ? '已投票' : '投票';
-      btn.disabled = !open || sub.voted || spent;
-      btn.addEventListener('click', () => vote(sub.id));
+      btn.className = sub.voted ? 'btn btn-outline btn-error btn-sm' : 'btn btn-primary btn-sm';
+      btn.textContent = sub.voted ? '撤票' : '投票';
+      btn.disabled = !open || (!sub.voted && spent);
+      btn.addEventListener('click', () => (sub.voted ? unvote(sub.id) : vote(sub.id)));
       foot.appendChild(btn);
     }
     li.appendChild(head);
@@ -205,6 +244,16 @@ async function vote(submissionId: string) {
   }
 }
 
+/** 撤票（功能2）：撤回后可改投其他投稿。 */
+async function unvote(submissionId: string) {
+  try {
+    await api(`/api/votes/${submissionId}`, { method: 'DELETE' });
+    await loadAll();
+  } catch (err) {
+    banner((err as Error).message);
+  }
+}
+
 async function submitDraft() {
   try {
     await api('/api/submissions', {
@@ -230,6 +279,21 @@ function tickCounter() {
 
 function tickCountdown() {
   const el = $('countdown');
+  const phase = phaseOf();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const fmt = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+  };
+  if (phase === 'before') {
+    const left = Date.parse(state.story!.start_date! + 'T00:00:00+08:00') - Date.now();
+    el.textContent = `距离开稿：${fmt(Math.max(left, 0))}`;
+    return;
+  }
+  if (phase === 'ended') {
+    el.textContent = '本故事已完结';
+    return;
+  }
   if (!state.segment) {
     el.textContent = '距离本回合结束：--:--:--';
     return;
@@ -239,9 +303,7 @@ function tickCountdown() {
     el.textContent = '本回合时间已到';
     return;
   }
-  const s = Math.floor(left / 1000);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  el.textContent = `距离本回合结束：${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
+  el.textContent = `距离本回合结束：${fmt(left)}`;
 }
 
 // ---------- 事件 ----------

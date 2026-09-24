@@ -89,6 +89,10 @@ CI（Cloudflare Workers Builds）：把 Settings > Build 的 Deploy command 设�
 | GET | `/api/segments/:id/submissions` | 当日投稿列表（含 voted / is_mine） |
 | POST | `/api/submissions` | 投稿 `{segment_id, content}` |
 | POST | `/api/votes` | 投票 `{submission_id}` |
+| POST | `/api/votes` | 投票 `{submission_id}` |
+| POST | `/api/votes` | 投票 `{submission_id}` |
+| POST | `/api/votes` | 投票 `{submission_id}` |
+| DELETE | `/api/votes/:submission_id` | 撤票（撤回后可改投其他投稿） |
 | POST | `/api/auth/register` / `login` / `logout` | 注册 / 登录 / 退出 |
 | GET | `/api/auth/me` | 当前用户 |
 | POST | `/api/admin/stories` | 创建故事 `{title, opening}` + Day 1 |

@@ -17,7 +17,8 @@ export async function createSubmission(
   if (!check.ok) return { ok: false, status: 400, error: check.error };
   const seg = await db.prepare(SQL.segmentById).bind(segmentId).first<SegmentRow>();
   if (!seg) return { ok: false, status: 404, error: '回合不存在' };
-  // 只有 open 且未到 closes_at 才能投稿（plan §3）
+  // 排期未开始不收稿（开始日 00:00 UTC+8 起）；open 且未到 closes_at 才能投稿（plan §3）
+  if (nowMs < msAt(seg.opened_at)) return { ok: false, status: 403, error: '本回合还没开始' };
   if (seg.status !== 'open' || nowMs >= msAt(seg.closes_at)) {
     return { ok: false, status: 403, error: '本回合已结束' };
   }

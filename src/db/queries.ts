@@ -25,6 +25,9 @@ export interface StoryRow {
   opening: string;
   created_at: string;
   status: string;
+  /** 排期（业务日 YYYY-MM-DD，UTC+8）；空 = 无排期 */
+  start_date: string | null;
+  end_date: string | null;
 }
 
 export interface SegmentRow {
@@ -58,9 +61,10 @@ export const SQL = {
   listUsers: `SELECT id, username, created_at FROM users ORDER BY created_at ASC`,
 
   // stories
-  insertStory: `INSERT INTO stories (id, title, opening, created_at, status) VALUES (?, ?, ?, ?, 'active')`,
+  insertStory:
+    `INSERT INTO stories (id, title, opening, created_at, status, start_date, end_date) VALUES (?, ?, ?, ?, 'active', ?, ?)`,
   storyById: `SELECT * FROM stories WHERE id = ?`,
-  updateStory: `UPDATE stories SET title = ?, opening = ? WHERE id = ?`,
+  updateStory: `UPDATE stories SET title = ?, opening = ?, start_date = ?, end_date = ? WHERE id = ?`,
   listStories: `SELECT * FROM stories WHERE status = 'active' ORDER BY created_at ASC`,
 
   // segments
@@ -96,7 +100,7 @@ export const SQL = {
     `EXISTS(SELECT 1 FROM votes v WHERE v.submission_id = s.id AND v.user_id = ?) AS voted ` +
     `FROM submissions s JOIN users u ON u.id = s.author_id ` +
     `WHERE s.segment_id = ? AND s.status = 'active' ` +
-    `ORDER BY s.vote_count DESC, s.created_at ASC`,
+    `ORDER BY s.created_at DESC, s.id DESC`,
   adminSubmissions:
     `SELECT s.id, s.segment_id, s.author_id, s.content, s.character_count, s.vote_count, s.status, s.created_at, ` +
     `u.username AS author_username ` +
@@ -111,6 +115,8 @@ export const SQL = {
 
   // votes
   insertVote: `INSERT INTO votes (id, segment_id, submission_id, user_id, created_at) VALUES (?, ?, ?, ?, ?)`,
+  deleteVote: `DELETE FROM votes WHERE segment_id = ? AND submission_id = ? AND user_id = ?`,
   voteCountByUser: `SELECT COUNT(*) AS n FROM votes WHERE segment_id = ? AND user_id = ?`,
   incVoteCount: `UPDATE submissions SET vote_count = vote_count + 1 WHERE id = ?`,
+  decVoteCount: `UPDATE submissions SET vote_count = MAX(vote_count - 1, 0) WHERE id = ?`,
 } as const;

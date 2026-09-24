@@ -22,3 +22,19 @@ export function windowAfter(closesAt: string): { openedAt: string; closesAt: str
   const start = msAt(closesAt);
   return { openedAt: isoAt(start), closesAt: isoAt(start + DAY_MS) };
 }
+
+/** 排期日期（YYYY-MM-DD，UTC+8 业务日）→ 该日 00:00 的 UTC 毫秒。 */
+export function dateStartMs(date: string): number {
+  return Date.parse(`${date}T00:00:00Z`) - TZ_OFFSET_MS;
+}
+
+/** 排期截止日（YYYY-MM-DD）→ 该日 24:00（即次日 00:00）的 UTC 毫秒。 */
+export function dateEndMs(date: string): number {
+  return dateStartMs(date) + DAY_MS;
+}
+
+/** 以排期开始日构造 Day 1 的窗口。 */
+export function firstWindowOf(startDate: string): { openedAt: string; closesAt: string } {
+  const start = dateStartMs(startDate);
+  return { openedAt: isoAt(start), closesAt: isoAt(start + DAY_MS) };
+}

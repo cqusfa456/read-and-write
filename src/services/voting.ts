@@ -15,6 +15,7 @@ export async function castVote(
   const seg = await db.prepare(SQL.segmentById).bind(sub.segment_id).first<SegmentRow>();
   if (!seg) return { ok: false, status: 404, error: '回合不存在' };
   // vote.segment_id 恒取自 submission（Invariant 5）
+  if (nowMs < msAt(seg.opened_at)) return { ok: false, status: 403, error: '本回合还没开始' };
   if (seg.status !== 'open' || nowMs >= msAt(seg.closes_at)) {
     return { ok: false, status: 403, error: '本回合已结束' };
   }
@@ -31,6 +32,27 @@ export async function castVote(
     return { ok: false, status: 409, error: '本回合已投过票' }; // UNIQUE(segment_id, user_id) 兜底
   }
   await db.prepare(SQL.incVoteCount).bind(sub.id).run(); // vote_count 仅是显示缓存（plan §21）
+  const fresh = await db.prepare(SQL.submissionById).bind(sub.id).first<SubmissionRow>();
+  return { ok: true, voteCount: fresh?.vote_count ?? 0 };
+}
+
+/** 撤票：仅在回合开放期可撤；撤回后本回合的票数配额恢复，可改投其他投稿。 */
+export async function removeVote(
+  db: DB,
+  userId: string,
+  submissionId: string,
+  nowMs: number,
+): Promise<ServiceResult<{ voteCount: number }>> {
+  const sub = await db.prepare(SQL.submissionById).bind(submissionId).first<SubmissionRow>();
+  if (!sub || sub.status !== 'active') return { ok: false, status: 404, error: '投稿不存在或已下架' };
+  const seg = await db.prepare(SQL.segmentById).bind(sub.segment_id).first<SegmentRow>();
+  if (!seg) return { ok: false, status: 404, error: '回合不存在' };
+  if (seg.status !== 'open' || nowMs >= msAt(seg.closes_at)) {
+    return { ok: false, status: 403, error: '本回合已结束' };
+  }
+  const deleted = await db.prepare(SQL.deleteVote).bind(seg.id, sub.id, userId).run();
+  if (deleted.meta.changes === 0) return { ok: false, status: 409, error: '没有可撤销的投票' };
+  await db.prepare(SQL.decVoteCount).bind(sub.id).run();
   const fresh = await db.prepare(SQL.submissionById).bind(sub.id).first<SubmissionRow>();
   return { ok: true, voteCount: fresh?.vote_count ?? 0 };
 }

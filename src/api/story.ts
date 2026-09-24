@@ -16,6 +16,8 @@ export async function getStory(ctx: Ctx, params: Record<string, string>): Promis
     id: story.id,
     title: story.title,
     opening: story.opening,
+    start_date: story.start_date,
+    end_date: story.end_date,
     current_segment: seg ? segmentJson(seg) : null,
   });
 }

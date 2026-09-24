@@ -27,6 +27,7 @@ const routes: Array<[string, string, Handler]> = [
   ['GET', '/api/segments/:id/submissions', (ctx, _req, p) => submission.listBySegment(ctx, p)],
   ['POST', '/api/submissions', (ctx, req) => submission.create(ctx, req)],
   ['POST', '/api/votes', (ctx, req) => vote.create(ctx, req)],
+  ['DELETE', '/api/votes/:submission_id', (ctx, req, p) => vote.remove(ctx, req, p)],
   ['POST', '/api/auth/register', auth.register],
   ['POST', '/api/auth/login', auth.login],
   ['POST', '/api/auth/logout', () => auth.logout()],

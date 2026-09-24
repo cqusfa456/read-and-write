@@ -1,11 +1,22 @@
 import { SQL, type SegmentRow, type StoryRow, type UserRow } from '../db/queries.ts';
 import { finalizeSegment } from '../services/finalization.ts';
-import { isoAt, windowFor } from '../utils/time.ts';
+import { isoAt, firstWindowOf, windowFor } from '../utils/time.ts';
 import { apiError, json, readJson, str } from '../utils/validation.ts';
 import { isAdmin, segmentJson, submissionJson, type Ctx } from './common.ts';
 
 function adminOnly(ctx: Ctx): Response | null {
   return isAdmin(ctx) ? null : apiError('无权限', 403);
+}
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** 排期（功能3）：start_date/end_date 为 UTC+8 业务日（YYYY-MM-DD）；空 = 无排期（长期开放）。 */
+function schedule(value: unknown, name: string): { ok: true; value: string | null } | { ok: false; response: Response } {
+  if (value === undefined || value === null || value === '') return { ok: true, value: null };
+  if (typeof value !== 'string' || !DATE_RE.test(value)) {
+    return { ok: false, response: apiError(`排期日期需为 YYYY-MM-DD：${name}`) };
+  }
+  return { ok: true, value };
 }
 
 /** 管理员创建故事：写入 Opening 并创建 Day 1（plan §59 MVP 流程第一步）。 */
@@ -18,9 +29,17 @@ export async function createStory(ctx: Ctx, request: Request): Promise<Response>
   if (!title.ok) return title.response;
   const opening = str(body.value.opening, 'opening', 4000);
   if (!opening.ok) return opening.response;
+  const start = schedule(body.value.start_date, 'start_date');
+  if (!start.ok) return start.response;
+  const end = schedule(body.value.end_date, 'end_date');
+  if (!end.ok) return end.response;
+  if (start.value && end.value && end.value < start.value) return apiError('截止日不能早于开始日');
   const storyId = crypto.randomUUID();
-  const win = windowFor(ctx.nowMs);
-  await ctx.db.prepare(SQL.insertStory).bind(storyId, title.value, opening.value, isoAt(ctx.nowMs)).run();
+  const win = start.value ? firstWindowOf(start.value) : windowFor(ctx.nowMs);
+  await ctx.db
+    .prepare(SQL.insertStory)
+    .bind(storyId, title.value, opening.value, isoAt(ctx.nowMs), start.value, end.value)
+    .run();
   const segmentId = crypto.randomUUID();
   await ctx.db
     .prepare(SQL.insertSegment)
@@ -31,7 +50,7 @@ export async function createStory(ctx: Ctx, request: Request): Promise<Response>
   return json({ story, segment: seg ? segmentJson(seg) : null }, 201);
 }
 
-/** 测试阶段：管理员可修改标题与开篇（Canon 仍只能由结算产生，plan §39 不提供手改 Canon）。 */
+/** 测试阶段：管理员可修改标题/开篇/排期（Canon 仍只能由结算产生，plan §39 不提供手改 Canon）。 */
 export async function updateStory(ctx: Ctx, request: Request, params: Record<string, string>): Promise<Response> {
   const denied = adminOnly(ctx);
   if (denied) return denied;
@@ -41,7 +60,15 @@ export async function updateStory(ctx: Ctx, request: Request, params: Record<str
   if (!title.ok) return title.response;
   const opening = str(body.value.opening, 'opening', 4000);
   if (!opening.ok) return opening.response;
-  const result = await ctx.db.prepare(SQL.updateStory).bind(title.value, opening.value, params.id).run();
+  const start = schedule(body.value.start_date, 'start_date');
+  if (!start.ok) return start.response;
+  const end = schedule(body.value.end_date, 'end_date');
+  if (!end.ok) return end.response;
+  if (start.value && end.value && end.value < start.value) return apiError('截止日不能早于开始日');
+  const result = await ctx.db
+    .prepare(SQL.updateStory)
+    .bind(title.value, opening.value, start.value, end.value, params.id)
+    .run();
   if (result.meta.changes === 0) return apiError('故事不存在', 404);
   const story = await ctx.db.prepare(SQL.storyById).bind(params.id).first<StoryRow>();
   return json({ story });

@@ -1,11 +1,12 @@
 import { CONFIG } from '../config.ts';
-import { SQL, type DB, type SegmentRow } from '../db/queries.ts';
-import { isoAt, msAt, windowAfter } from '../utils/time.ts';
+import { SQL, type DB, type SegmentRow, type StoryRow } from '../db/queries.ts';
+import { dateEndMs, isoAt, msAt, windowAfter } from '../utils/time.ts';
 
 /**
  * Finalization（plan §13–§16）：结算一个已到期回合。
  * 并发安全（plan §14）：先做 open → finalizing 的条件 UPDATE，affected_rows = 0 的请求直接退出，
  * 保证只有一个 Canon、只创建一个下一 Segment（Invariants 6/7）。
+ * 排期：到达故事截止日 24:00（UTC+8）后不再创建新回合。
  */
 export async function finalizeSegment(db: DB, segmentId: string, nowMs: number, force = false): Promise<void> {
   const seg = await db.prepare(SQL.segmentById).bind(segmentId).first<SegmentRow>();
@@ -21,6 +22,9 @@ export async function finalizeSegment(db: DB, segmentId: string, nowMs: number, 
   const next = windowAfter(seg.closes_at);
   await db.prepare(SQL.finishSegment).bind(winner?.id ?? null, seg.id).run();
   // 没有有效投稿 → Canon = NULL，下一天照常开启、从上一 Canon 继续（plan §16）
+  const story = await db.prepare(SQL.storyById).bind(seg.story_id).first<StoryRow>();
+  const pastSchedule = Boolean(story?.end_date) && msAt(next.openedAt) >= dateEndMs(story!.end_date!);
+  if (pastSchedule) return; // 排期结束：之后不再开放
   await db
     .prepare(SQL.insertSegment)
     .bind(crypto.randomUUID(), seg.story_id, seg.day + 1, seg.id, next.openedAt, next.closesAt, isoAt(nowMs))

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import type { DB, Stmt } from '../src/db/queries.ts';
 import { isoAt } from '../src/utils/time.ts';
@@ -35,8 +35,11 @@ export function createTestDb(): TestDb {
 }
 
 export function applyMigrations(t: TestDb): void {
-  const sql = readFileSync(new URL('../migrations/0001_initial.sql', import.meta.url), 'utf8');
-  t.sqlite.exec(sql);
+  const dir = new URL('../migrations/', import.meta.url);
+  const files = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort();
+  for (const f of files) {
+    t.sqlite.exec(readFileSync(new URL(f, dir), 'utf8'));
+  }
 }
 
 export function setup(): TestDb {

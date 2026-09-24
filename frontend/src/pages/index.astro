@@ -38,6 +38,13 @@ import '../styles/global.css';
         <h2 class="card-title text-secondary">管理 · 故事 <span class="badge badge-warning badge-sm">admin</span></h2>
         <input id="admin-title" class="input input-bordered w-full" placeholder="故事标题" />
         <textarea id="admin-opening" rows="8" class="textarea textarea-bordered w-full" placeholder="开篇正文"></textarea>
+        <div class="flex flex-wrap items-center gap-3">
+          <label class="label"><span class="label-text">开始日期（UTC+8）</span></label>
+          <input id="admin-start" type="date" class="input input-bordered input-sm" />
+          <label class="label"><span class="label-text">截止日期</span></label>
+          <input id="admin-end" type="date" class="input input-bordered input-sm" />
+          <span class="text-xs opacity-60">留空 = 无排期（长期开放）；截止日 24:00 后不再开新回合</span>
+        </div>
         <div class="card-actions items-center justify-between">
           <p class="text-xs opacity-60">测试阶段：标题与开篇随时可保存修改；Canon 由每日结算自动产生，不可手改。</p>
           <button id="admin-save-btn" class="btn btn-secondary">保存</button>
@@ -61,6 +68,7 @@ import '../styles/global.css';
             <div id="status-line" class="text-sm opacity-70"></div>
           </div>
         </div>
+        <p id="schedule-line" class="text-xs opacity-60"></p>
         <div id="compose">
           <textarea id="content" rows="5" class="textarea textarea-bordered w-full" placeholder="写下这一段续写（80–300 字）"></textarea>
           <div class="mt-2 flex items-center justify-between">
